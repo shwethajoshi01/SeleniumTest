@@ -1,28 +1,38 @@
+package demo;
+
 import org.openqa.selenium.By;
-import org.openqa.selenium.Keys;
+import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
-public class YahooFinanceTest {
-    public static void main(String[] args) {
-        // Set the path for the WebDriver executable
-        System.setProperty("webdriver.chrome.driver", "path/to/chromedriver"); // Update the path to your chromedriver
-
-        // Initialize WebDriver
-        WebDriver driver = new ChromeDriver();
+public class SeleniumTest {
+	
+	WebDriver driver;
+	@BeforeMethod
+	public void setup() {
+		driver = new ChromeDriver();
+		driver.manage().window().maximize();
+		driver.manage().deleteAllCookies();
+		driver.manage().timeouts().pageLoadTimeout(Duration.ofSeconds(120));
+		driver.get("https://finance.yahoo.com/");
+		driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(60));
+	}
+	
+	@Test
+    public void testToVerifyTeslaStockPrice() {
+      
 
         try {
-            // Navigate to Yahoo Finance
-            driver.get("https://finance.yahoo.com/");
-
-            // Maximize browser window
-            driver.manage().window().maximize();
-
-            // Implicit wait
-            driver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
+           
+           
 
             // Locate the search box and search for "TSLA"
             WebElement searchBox = driver.findElement(By.id("ybar-sbq"));
@@ -46,12 +56,18 @@ public class YahooFinanceTest {
             firstSuggestion.click();
 
             // Wait for the Tesla stock page to load
-            TimeUnit.SECONDS.sleep(3);
+            WebDriverWait webDriverWait = new WebDriverWait(driver, Duration.ofSeconds(3));
+            webDriverWait.until(ExpectedConditions.presenceOfElementLocated(By.xpath("//h1[text()='Tesla, Inc.']")));
+            System.out.println("Successfully Navigated to Tesla Stock Page");
 
+            JavascriptExecutor javascriptExecutor = (JavascriptExecutor) driver;
+            javascriptExecutor.executeScript("window.scrollBy(0,250)","");
             // Verify stock price is greater than $200
-            WebElement stockPriceElement = driver.findElement(By.xpath("//fin-streamer[@data-field='regularMarketPrice']"));
+            WebElement stockPriceElement = driver.findElement(By.xpath("//*[@data-testid='quote-hdr']//following::fin-streamer[@data-field='regularMarketPrice' and @data-testid='qsp-price']/span"));
+            webDriverWait.until(ExpectedConditions.visibilityOf(stockPriceElement));
+            javascriptExecutor.executeScript("arguments[0].scrollIntoView();",stockPriceElement);
             String stockPriceText = stockPriceElement.getText();
-            double stockPrice = Double.parseDouble(stockPriceText.replace(",", ""));
+            double stockPrice = Double.parseDouble(stockPriceText);
 
             if (stockPrice > 200) {
                 System.out.println("Stock price verification passed. Current price: $" + stockPrice);
@@ -76,5 +92,6 @@ public class YahooFinanceTest {
             // Close the browser
             driver.quit();
         }
+
     }
 }
